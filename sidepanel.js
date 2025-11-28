@@ -1,7 +1,6 @@
 // sidepanel.js
 // ทำงานทั้งบน localhost และ Render (ไม่มี chrome.* ใช้ได้บนเว็บปกติ)
 
-// รอให้ DOM โหลดก่อนค่อยจับ element
 document.addEventListener("DOMContentLoaded", () => {
   const modeEl = document.getElementById("mode");
   const actorPresetEl = document.getElementById("actorPreset");
@@ -23,31 +22,36 @@ document.addEventListener("DOMContentLoaded", () => {
   const imageInfo = document.getElementById("imageInfo");
   const imagePreview = document.getElementById("imagePreview");
 
-  // เก็บ base64 ของรูปล่าสุด (ถ้ามี)
+  // เก็บ base64 รูปล่าสุด (ถ้ามี)
   let imageBase64 = null;
 
-  // ---------- จัดการรูปภาพ ----------
+  // ---------- จัดการรูป ----------
   if (imageInput) {
     imageInput.addEventListener("change", () => {
       const file = imageInput.files && imageInput.files[0];
       imageBase64 = null;
-      imageInfo.textContent = "";
-      imagePreview.style.display = "none";
-      imagePreview.src = "";
+      if (imageInfo) imageInfo.textContent = "";
+      if (imagePreview) {
+        imagePreview.style.display = "none";
+        imagePreview.src = "";
+      }
 
       if (!file) return;
 
-      imageInfo.textContent = `${file.name} (${Math.round(
-        file.size / 1024
-      )} KB)`;
+      if (imageInfo) {
+        imageInfo.textContent = `${file.name} (${Math.round(
+          file.size / 1024
+        )} KB)`;
+      }
 
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target.result; // data:image/...;base64,xxxx
-        imagePreview.src = result;
-        imagePreview.style.display = "block";
+        if (imagePreview) {
+          imagePreview.src = result;
+          imagePreview.style.display = "block";
+        }
 
-        // ตัด prefix ออก เหลือเฉพาะ base64
         const commaIndex = result.indexOf(",");
         if (commaIndex !== -1) {
           imageBase64 = result.substring(commaIndex + 1);
@@ -59,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ---------- ฟังก์ชันช่วย ----------
+  // ---------- helper ----------
   function setStatus(msg, type = "normal") {
     if (!statusEl) return;
     statusEl.textContent = msg || "";
@@ -81,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let finalPrompt = "";
 
-    // รวม preset ทั้งหมดเป็น section ชัด ๆ
+    // รวม preset ทั้งหมดเป็น section
     finalPrompt += "=== ตัวช่วย Preset จากหน้าเว็บ ===\n";
     if (actorPreset) finalPrompt += `ตัวนักแสดง (Talent):\n${actorPreset}\n\n`;
     if (scenePreset) finalPrompt += `ฉาก / สถานที่:\n${scenePreset}\n\n`;
@@ -96,17 +100,16 @@ document.addEventListener("DOMContentLoaded", () => {
       finalPrompt += "(ผู้ใช้ยังไม่พิมพ์รายละเอียดสินค้า / โปร / บรรยากาศ)\n\n";
     }
 
-    // ส่วนสำคัญ: ส่ง "ประโยคบทพูดหลักของนักแสดง" ให้ไปแบบ tag ชัด ๆ
+    // ส่วนสำคัญ: ประโยคบทพูดหลัก
     if (speechCustom) {
       finalPrompt +=
         'ประโยคบทพูดหลักของนักแสดง (ผู้ใช้ต้องการให้พูดหรือใช้เป็นแกนหลักของบทพูด):\n';
       finalPrompt += speechCustom + "\n";
     }
 
-    // ใส่ meta เล็กน้อยเผื่อโมเดลใช้
     finalPrompt += "\n=== หมายเหตุเพิ่มเติมจากหน้าเว็บ ===\n";
     finalPrompt +=
-      "- ถ้าใน preset หรือ prompt มีคำว่า \"ตามรูป\" ให้ถือว่ามีรูปสินค้าจริงแนบมา\n";
+      '- ถ้าใน preset หรือ prompt มีคำว่า "ตามรูป" ให้ถือว่ามีรูปสินค้าจริงแนบมา\n';
     finalPrompt +=
       "- ถ้าข้อมูลไม่ครบ ให้ช่วยจินตนาการเติมให้เนียน เหมาะกับสินค้าประเภทนั้น\n";
 
@@ -165,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ---------- ผูกปุ่มต่าง ๆ ----------
+  // ---------- ปุ่มต่าง ๆ ----------
 
   // ปุ่ม แปลง Prompt ด้วย AI
   if (transformBtn) {
@@ -228,8 +231,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // TODO: แก้ URL ตรงนี้เป็นลิงก์ Flow Veo 3.1 จริงของคุณ
-      const flowUrl = "https://www.google.com"; // แก้เป็นลิงก์ Flow ของคุณเอง
+      // แก้ URL นี้เป็นลิงก์ Flow Veo 3.1 ของคุณเอง
+      const flowUrl = "https://www.google.com";
       window.open(flowUrl, "_blank");
     });
   }
